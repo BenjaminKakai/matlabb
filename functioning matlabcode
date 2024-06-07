@@ -1,0 +1,96 @@
+function BlasiusSolver()
+    % Define the domain
+    eta_max = 10;
+    num_points = 1000;
+    eta = linspace(0, eta_max, num_points);
+    
+    % Initialize variables
+    f = zeros(1, num_points);
+    f_prime = zeros(1, num_points);
+    f_double_prime = zeros(1, num_points);
+    f_triple_prime = zeros(1, num_points);
+    
+    % Boundary conditions
+    f(1) = 0;
+    f_prime(1) = 0;
+    f_prime(num_points) = 1;
+    
+    % Optimized Padé 4 Scheme
+    [f_4, f_prime_4] = pade4_scheme_optimized(eta, f, f_prime, f_double_prime, f_triple_prime);
+    
+    % Optimized Padé 6 Scheme
+    [f_6, f_prime_6] = pade6_scheme_optimized(eta, f, f_prime, f_double_prime, f_triple_prime);
+    
+    % Optimized Padé [4/4] Scheme (Higher-order)
+    [f_44, f_prime_44] = pade44_scheme_optimized(eta, f, f_prime, f_double_prime, f_triple_prime);
+    
+    % Debug: Print values to check for non-positive values
+    disp('f_prime_4 values:');
+    disp(f_prime_4);
+    disp('f_prime_6 values:');
+    disp(f_prime_6);
+    disp('f_prime_44 values:');
+    disp(f_prime_44);
+    
+    % Sanity checks
+    if any(f_prime_4 <= 0)
+        warning('f_prime_4 contains non-positive values.');
+    end
+    if any(f_prime_6 <= 0)
+        warning('f_prime_6 contains non-positive values.');
+    end
+    if any(f_prime_44 <= 0)
+        warning('f_prime_44 contains non-positive values.');
+    end
+    
+    % Plot the Blasius boundary layer profile
+    figure;
+    semilogx(eta, f_prime_4, 'b', 'DisplayName', 'Optimized Padé 4');
+    hold on;
+    semilogx(eta, f_prime_6, 'r', 'DisplayName', 'Optimized Padé 6');
+    semilogx(eta, f_prime_44, 'g', 'DisplayName', 'Optimized Padé [4/4]');
+    title('Optimized Blasius Boundary Layer Profile');
+    xlabel('eta');
+    ylabel('f prime');
+    legend show;
+    grid on;
+end
+
+function [f, f_prime] = pade4_scheme_optimized(eta, f, f_prime, f_double_prime, f_triple_prime)
+    num_points = length(eta);
+    for i = 2:num_points-1
+        delta_eta = eta(i+1) - eta(i);
+        f_double_prime(i) = (f(i+1) - 2*f(i) + f(i-1)) / delta_eta^2;
+        f_prime(i) = (f(i+1) - f(i-1)) / (2 * delta_eta);
+        A = 1 + delta_eta^2 / 12;
+        f_triple_prime(i) = - (0.5 * f(i) * f_double_prime(i)) / A;
+        f(i+1) = f(i) + delta_eta * f_prime(i);
+        f_prime(i+1) = f_prime(i) + delta_eta * f_double_prime(i);
+    end
+end
+
+function [f, f_prime] = pade6_scheme_optimized(eta, f, f_prime, f_double_prime, f_triple_prime)
+    num_points = length(eta);
+    for i = 2:num_points-1
+        delta_eta = eta(i+1) - eta(i);
+        f_double_prime(i) = (f(i+1) - 2*f(i) + f(i-1)) / delta_eta^2;
+        f_prime(i) = (f(i+1) - f(i-1)) / (2 * delta_eta);
+        A = 1 + delta_eta^2 / 20;
+        f_triple_prime(i) = - (0.5 * f(i) * f_double_prime(i)) / A;
+        f(i+1) = f(i) + delta_eta * f_prime(i);
+        f_prime(i+1) = f_prime(i) + delta_eta * f_double_prime(i);
+    end
+end
+
+function [f, f_prime] = pade44_scheme_optimized(eta, f, f_prime, f_double_prime, f_triple_prime)
+    num_points = length(eta);
+    for i = 2:num_points-1
+        delta_eta = eta(i+1) - eta(i);
+        f_double_prime(i) = (f(i+1) - 2*f(i) + f(i-1)) / delta_eta^2;
+        f_prime(i) = (f(i+1) - f(i-1)) / (2 * delta_eta);
+        A = 1 + delta_eta^2 / 30;
+        f_triple_prime(i) = - (0.5 * f(i) * f_double_prime(i)) / A;
+        f(i+1) = f(i) + delta_eta * f_prime(i);
+        f_prime(i+1) = f_prime(i) + delta_eta * f_double_prime(i);
+    end
+end
